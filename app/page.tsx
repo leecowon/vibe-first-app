@@ -1,558 +1,633 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-type FormData = {
-  husbandIncome: string;
-  wifeIncome: string;
-  extraIncome: string;
-  housingCost: string;
-  utilityCost: string;
-  phoneCost: string;
-  insuranceCost: string;
-  educationCost: string;
-  foodCost: string;
-  transportCost: string;
-  cardLivingCost: string;
-  loanPayment: string;
-  otherFixedCost: string;
-  monthlySavingGoal: string;
-  emergencyFundGoal: string;
-  currentEmergencyFund: string;
+type Answer = "yes" | "no" | "na";
+
+type Category =
+  | "욕실 안전"
+  | "야간 이동"
+  | "약 관리"
+  | "혈압/건강 관리"
+  | "주방/생활 안전";
+
+type Question = {
+  id: number;
+  category: Category;
+  text: string;
+  dangerAnswer: "yes" | "no";
 };
 
-type Result = {
-  totalIncome: number;
-  totalFixedCost: number;
-  totalLivingCost: number;
-  totalLoanPayment: number;
-  totalExpense: number;
-  monthlyBalance: number;
-  savingRate: number;
-  loanBurdenRate: number;
-  livingCostRate: number;
-  canReachSavingGoal: boolean;
-  emergencyFundMonthsText: string;
-  diagnosis: string;
-  warnings: string[];
-  statusColor: "green" | "yellow" | "red";
+type CategoryInfo = {
+  description: string;
+  items: string[];
+  link: string;
 };
 
-const initialForm: FormData = {
-  husbandIncome: "",
-  wifeIncome: "",
-  extraIncome: "",
-  housingCost: "",
-  utilityCost: "",
-  phoneCost: "",
-  insuranceCost: "",
-  educationCost: "",
-  foodCost: "",
-  transportCost: "",
-  cardLivingCost: "",
-  loanPayment: "",
-  otherFixedCost: "",
-  monthlySavingGoal: "",
-  emergencyFundGoal: "",
-  currentEmergencyFund: "",
+const questions: Question[] = [
+  {
+    id: 1,
+    category: "욕실 안전",
+    text: "욕실 바닥에 미끄럼방지 매트가 있나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 2,
+    category: "욕실 안전",
+    text: "욕실이나 변기 주변에 잡을 수 있는 손잡이가 있나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 3,
+    category: "욕실 안전",
+    text: "샤워 후 욕실 바닥에 물기가 오래 남지 않나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 4,
+    category: "야간 이동",
+    text: "침대 옆이나 복도에 야간 조명이 있나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 5,
+    category: "야간 이동",
+    text: "화장실까지 가는 길에 문턱이나 걸려 넘어질 물건이 없나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 6,
+    category: "야간 이동",
+    text: "밤에 화장실을 자주 가는 편인가요?",
+    dangerAnswer: "yes",
+  },
+  {
+    id: 7,
+    category: "약 관리",
+    text: "복용 중인 약을 요일별로 정리하고 있나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 8,
+    category: "약 관리",
+    text: "약을 중복해서 먹거나 깜빡한 적이 있나요?",
+    dangerAnswer: "yes",
+  },
+  {
+    id: 9,
+    category: "약 관리",
+    text: "약 봉투나 약통에 복용 시간이 잘 표시되어 있나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 10,
+    category: "혈압/건강 관리",
+    text: "집에 혈압계나 체온계 같은 기본 건강 측정 도구가 있나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 11,
+    category: "혈압/건강 관리",
+    text: "혈압이나 혈당을 기록하는 습관이 있나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 12,
+    category: "혈압/건강 관리",
+    text: "어지럼, 두근거림, 숨참 같은 증상을 그냥 넘기는 편인가요?",
+    dangerAnswer: "yes",
+  },
+  {
+    id: 13,
+    category: "주방/생활 안전",
+    text: "가스레인지나 인덕션 사용 후 끄는 습관을 확인하고 있나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 14,
+    category: "주방/생활 안전",
+    text: "주방 바닥이나 거실에 전선, 박스, 물건이 널려 있지 않나요?",
+    dangerAnswer: "no",
+  },
+  {
+    id: 15,
+    category: "주방/생활 안전",
+    text: "자주 쓰는 물건이 너무 높은 곳에 있지 않나요?",
+    dangerAnswer: "no",
+  },
+];
+
+const categoryInfo: Record<Category, CategoryInfo> = {
+  "욕실 안전": {
+    description:
+      "욕실 미끄럼과 손잡이 부재는 낙상 위험을 높일 수 있습니다.",
+    items: ["미끄럼방지 매트", "욕실 손잡이", "논슬립 실내화", "욕실 발판"],
+    link: "https://link.coupang.com/a/placeholder",
+  },
+  "야간 이동": {
+    description:
+      "밤에 화장실을 자주 가거나 조명이 부족하면 넘어질 위험이 커질 수 있습니다.",
+    items: ["센서등", "침대 옆 무드등", "복도 조명", "문턱 경사대"],
+    link: "https://link.coupang.com/a/placeholder",
+  },
+  "약 관리": {
+    description:
+      "약 복용을 깜빡하거나 중복 복용하는 경우 정리 도구가 필요할 수 있습니다.",
+    items: ["요일별 약통", "알람 약통", "약 정리함", "복약 체크리스트"],
+    link: "https://link.coupang.com/a/placeholder",
+  },
+  "혈압/건강 관리": {
+    description:
+      "기본 건강 측정과 기록 습관이 부족하면 이상 신호를 놓칠 수 있습니다.",
+    items: ["가정용 혈압계", "체온계", "혈당 기록 노트", "건강 기록장"],
+    link: "https://link.coupang.com/a/placeholder",
+  },
+  "주방/생활 안전": {
+    description:
+      "전선, 문턱, 가스 사용, 높은 수납 위치는 생활 중 사고 위험을 높일 수 있습니다.",
+    items: ["가스 자동차단기", "주방 타이머", "전선 정리함", "수납 박스"],
+    link: "https://link.coupang.com/a/placeholder",
+  },
 };
+
+const categories: Category[] = [
+  "욕실 안전",
+  "야간 이동",
+  "약 관리",
+  "혈압/건강 관리",
+  "주방/생활 안전",
+];
 
 export default function Home() {
-  const [form, setForm] = useState<FormData>(initialForm);
-  const [result, setResult] = useState<Result | null>(null);
-  const [message, setMessage] = useState("");
+  const [started, setStarted] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, Answer>>({});
+  const [showResult, setShowResult] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("");
 
-  const toNumber = (value: string) => {
-    return Number(value.replaceAll(",", "")) || 0;
-  };
+  const result = useMemo(() => {
+    const categoryScores: Record<Category, number> = {
+      "욕실 안전": 0,
+      "야간 이동": 0,
+      "약 관리": 0,
+      "혈압/건강 관리": 0,
+      "주방/생활 안전": 0,
+    };
 
-  const formatWon = (value: number) => {
-    return new Intl.NumberFormat("ko-KR").format(Math.round(value)) + "원";
-  };
+    let totalRiskScore = 0;
 
-  const formatPercent = (value: number) => {
-    if (!isFinite(value)) return "0%";
-    return value.toFixed(1) + "%";
-  };
+    questions.forEach((question) => {
+      const answer = answers[question.id];
 
-  const updateField = (key: keyof FormData, value: string) => {
-    const onlyNumber = value.replace(/[^0-9]/g, "");
+      if (!answer || answer === "na") {
+        return;
+      }
 
-    setForm({
-      ...form,
-      [key]: onlyNumber,
+      let score = 0;
+
+      // 위험 답변과 일치하면 2점, 반대 답변은 0점으로 계산합니다.
+      if (answer === question.dangerAnswer) {
+        score = 2;
+      }
+
+      totalRiskScore += score;
+      categoryScores[question.category] += score;
     });
+
+    const safetyScore = Math.max(0, 100 - totalRiskScore * 4);
+
+    let level = "";
+    let levelColor: "green" | "yellow" | "red" = "green";
+
+    if (totalRiskScore <= 5) {
+      level = "안전한 편";
+      levelColor = "green";
+    } else if (totalRiskScore <= 12) {
+      level = "주의 필요";
+      levelColor = "yellow";
+    } else {
+      level = "위험 요소 많음";
+      levelColor = "red";
+    }
+
+    const topRisks = categories
+      .map((category) => ({
+        category,
+        score: categoryScores[category],
+        ...categoryInfo[category],
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    return {
+      totalRiskScore,
+      safetyScore,
+      level,
+      levelColor,
+      categoryScores,
+      topRisks,
+    };
+  }, [answers]);
+
+  const answeredCount = Object.keys(answers).length;
+  const isComplete = answeredCount === questions.length;
+
+  const handleAnswer = (questionId: number, answer: Answer) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: answer,
+    }));
   };
 
-  const getInputValue = (key: keyof FormData) => {
-    const value = form[key];
-    if (!value) return "";
-    return new Intl.NumberFormat("ko-KR").format(Number(value));
-  };
-
-  const calculate = () => {
-    const husbandIncome = toNumber(form.husbandIncome);
-    const wifeIncome = toNumber(form.wifeIncome);
-    const extraIncome = toNumber(form.extraIncome);
-
-    const housingCost = toNumber(form.housingCost);
-    const utilityCost = toNumber(form.utilityCost);
-    const phoneCost = toNumber(form.phoneCost);
-    const insuranceCost = toNumber(form.insuranceCost);
-    const educationCost = toNumber(form.educationCost);
-    const foodCost = toNumber(form.foodCost);
-    const transportCost = toNumber(form.transportCost);
-    const cardLivingCost = toNumber(form.cardLivingCost);
-    const loanPayment = toNumber(form.loanPayment);
-    const otherFixedCost = toNumber(form.otherFixedCost);
-
-    const monthlySavingGoal = toNumber(form.monthlySavingGoal);
-    const emergencyFundGoal = toNumber(form.emergencyFundGoal);
-    const currentEmergencyFund = toNumber(form.currentEmergencyFund);
-
-    const totalIncome = husbandIncome + wifeIncome + extraIncome;
-
-    if (totalIncome <= 0) {
-      setMessage("부부 합산 월수입을 입력해주세요.");
-      setResult(null);
+  const handleShowResult = () => {
+    if (!isComplete) {
+      alert("15개 문항에 모두 답해주세요.");
       return;
     }
 
-    // 고정지출: 매달 거의 고정적으로 나가는 비용
-    const totalFixedCost =
-      housingCost +
-      utilityCost +
-      phoneCost +
-      insuranceCost +
-      educationCost +
-      otherFixedCost;
-
-    // 생활비: 매달 변동 가능성이 큰 비용
-    const totalLivingCost = foodCost + transportCost + cardLivingCost;
-
-    const totalLoanPayment = loanPayment;
-    const totalExpense = totalFixedCost + totalLivingCost + totalLoanPayment;
-    const monthlyBalance = totalIncome - totalExpense;
-
-    const savingRate = (monthlyBalance / totalIncome) * 100;
-    const loanBurdenRate = (totalLoanPayment / totalIncome) * 100;
-    const livingCostRate = (totalLivingCost / totalIncome) * 100;
-
-    const canReachSavingGoal = monthlyBalance >= monthlySavingGoal;
-
-    const neededEmergencyFund = emergencyFundGoal - currentEmergencyFund;
-
-    let emergencyFundMonthsText = "";
-
-    if (neededEmergencyFund <= 0) {
-      emergencyFundMonthsText = "이미 비상금 목표를 달성했습니다.";
-    } else if (monthlyBalance <= 0) {
-      emergencyFundMonthsText = "현재 구조로는 달성 어려움";
-    } else {
-      const months = Math.ceil(neededEmergencyFund / monthlyBalance);
-      emergencyFundMonthsText = `약 ${months}개월`;
-    }
-
-    let diagnosis = "";
-    let statusColor: "green" | "yellow" | "red" = "green";
-
-    if (savingRate >= 20) {
-      diagnosis = "좋은 저축 구조입니다.";
-      statusColor = "green";
-    } else if (savingRate >= 10) {
-      diagnosis = "저축은 가능하지만 지출 점검이 필요합니다.";
-      statusColor = "yellow";
-    } else if (savingRate >= 0) {
-      diagnosis = "저축 여력이 낮습니다. 생활비나 고정지출 조정이 필요합니다.";
-      statusColor = "yellow";
-    } else {
-      diagnosis = "현재 구조는 적자입니다. 지출 재조정이 필요합니다.";
-      statusColor = "red";
-    }
-
-    const warnings: string[] = [];
-
-    if (loanBurdenRate >= 30) {
-      warnings.push("대출 상환 부담이 높은 편입니다.");
-    }
-
-    if (livingCostRate >= 35) {
-      warnings.push("생활비 비중이 높습니다.");
-    }
-
-    setResult({
-      totalIncome,
-      totalFixedCost,
-      totalLivingCost,
-      totalLoanPayment,
-      totalExpense,
-      monthlyBalance,
-      savingRate,
-      loanBurdenRate,
-      livingCostRate,
-      canReachSavingGoal,
-      emergencyFundMonthsText,
-      diagnosis,
-      warnings,
-      statusColor,
-    });
-
-    setMessage("");
+    setShowResult(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const fillExample = () => {
-    setForm({
-      husbandIncome: "5000000",
-      wifeIncome: "2700000",
-      extraIncome: "0",
-      housingCost: "1000000",
-      utilityCost: "300000",
-      phoneCost: "150000",
-      insuranceCost: "300000",
-      educationCost: "400000",
-      foodCost: "1000000",
-      transportCost: "300000",
-      cardLivingCost: "1500000",
-      loanPayment: "1800000",
-      otherFixedCost: "200000",
-      monthlySavingGoal: "1000000",
-      emergencyFundGoal: "10000000",
-      currentEmergencyFund: "3000000",
-    });
-    setMessage("예시 값이 입력되었습니다. 계산하기를 눌러보세요.");
-  };
-
-  const resetAll = () => {
-    setForm(initialForm);
-    setResult(null);
-    setMessage("");
+  const resetTest = () => {
+    setStarted(false);
+    setShowResult(false);
+    setAnswers({});
+    setCopyMessage("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const copyResult = async () => {
-    if (!result) return;
+    const recommendedItems = result.topRisks
+      .flatMap((risk) => risk.items)
+      .slice(0, 8);
 
     const text = `
-[부부가 부자되는 법 계산 결과]
+[부모님 집 안전 점검 결과]
 
-부부 합산 월수입: ${formatWon(result.totalIncome)}
-총 지출: ${formatWon(result.totalExpense)}
-월 잔액: ${formatWon(result.monthlyBalance)}
-저축률: ${formatPercent(result.savingRate)}
-대출상환 부담률: ${formatPercent(result.loanBurdenRate)}
-생활비 부담률: ${formatPercent(result.livingCostRate)}
-비상금 목표 달성 예상 기간: ${result.emergencyFundMonthsText}
+부모님 집 안전 점수: ${result.safetyScore}점
+위험 단계: ${result.level}
+위험 점수: ${result.totalRiskScore}점
 
-진단:
-${result.diagnosis}
+가장 먼저 점검할 곳 TOP 3:
+${result.topRisks
+  .map((risk, index) => `${index + 1}. ${risk.category}`)
+  .join("\n")}
 
-${
-  result.warnings.length > 0
-    ? "주의:\n" + result.warnings.map((item) => `- ${item}`).join("\n")
-    : "주의 항목 없음"
-}
+추천 준비물:
+${recommendedItems.map((item) => `- ${item}`).join("\n")}
+
+※ 이 결과는 생활 안전 점검용 참고 자료입니다. 의학적 진단이나 치료를 대신하지 않습니다.
     `.trim();
 
     await navigator.clipboard.writeText(text);
-    setMessage("계산 결과가 복사되었습니다.");
+    setCopyMessage("결과가 복사되었습니다.");
   };
 
-  const inputItems: {
-    key: keyof FormData;
-    label: string;
-    group: "수입" | "고정지출" | "생활비/대출" | "목표";
-  }[] = [
-    { key: "husbandIncome", label: "남편 월수입", group: "수입" },
-    { key: "wifeIncome", label: "아내 월수입", group: "수입" },
-    { key: "extraIncome", label: "기타 수입", group: "수입" },
-
-    { key: "housingCost", label: "주거비", group: "고정지출" },
-    { key: "utilityCost", label: "관리비/공과금", group: "고정지출" },
-    { key: "phoneCost", label: "통신비", group: "고정지출" },
-    { key: "insuranceCost", label: "보험료", group: "고정지출" },
-    { key: "educationCost", label: "교육비", group: "고정지출" },
-    { key: "otherFixedCost", label: "기타 고정지출", group: "고정지출" },
-
-    { key: "foodCost", label: "식비", group: "생활비/대출" },
-    { key: "transportCost", label: "교통비", group: "생활비/대출" },
-    { key: "cardLivingCost", label: "카드값/생활비", group: "생활비/대출" },
-    { key: "loanPayment", label: "대출 상환액", group: "생활비/대출" },
-
-    { key: "monthlySavingGoal", label: "월 저축 목표", group: "목표" },
-    { key: "emergencyFundGoal", label: "비상금 목표", group: "목표" },
-    { key: "currentEmergencyFund", label: "현재 비상금", group: "목표" },
-  ];
-
-  const groups: ("수입" | "고정지출" | "생활비/대출" | "목표")[] = [
-    "수입",
-    "고정지출",
-    "생활비/대출",
-    "목표",
-  ];
-
-  return (
-    <main className="min-h-screen bg-gray-100 px-4 py-8 text-gray-900">
-      <div className="mx-auto max-w-6xl">
-        <section className="mb-6 rounded-3xl bg-white p-6 shadow-sm md:p-10">
-          <p className="mb-3 inline-block rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold">
-            부부 통합 가계부 시뮬레이터
-          </p>
-          <h1 className="text-3xl font-black tracking-tight md:text-5xl">
-            부부가 부자되는 법
-          </h1>
-          <p className="mt-4 max-w-2xl text-gray-600 md:text-lg">
-            우리 집 돈이 어디로 새는지, 한 달에 얼마를 모을 수 있는지
-            계산해보세요.
-          </p>
-        </section>
-
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="rounded-3xl bg-white p-5 shadow-sm md:p-6">
-            <div className="mb-5 flex flex-wrap gap-2">
-              <button
-                onClick={fillExample}
-                className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-bold hover:bg-gray-100"
-              >
-                예시 입력값 채우기
-              </button>
-              <button
-                onClick={resetAll}
-                className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-bold hover:bg-gray-100"
-              >
-                전체 초기화
-              </button>
-            </div>
-
-            {groups.map((group) => (
-              <div key={group} className="mb-7">
-                <h2 className="mb-3 text-lg font-black">{group}</h2>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  {inputItems
-                    .filter((item) => item.group === group)
-                    .map((item) => (
-                      <label key={item.key} className="block">
-                        <span className="mb-1 block text-sm font-semibold text-gray-700">
-                          {item.label}
-                        </span>
-                        <div className="relative">
-                          <input
-                            value={getInputValue(item.key)}
-                            onChange={(event) =>
-                              updateField(item.key, event.target.value)
-                            }
-                            placeholder="0"
-                            inputMode="numeric"
-                            className="w-full rounded-2xl border border-gray-300 px-4 py-3 pr-10 outline-none focus:border-black"
-                          />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                            원
-                          </span>
-                        </div>
-                      </label>
-                    ))}
-                </div>
-              </div>
-            ))}
-
-            {message && (
-              <p className="mb-4 rounded-2xl bg-gray-100 px-4 py-3 text-center text-sm font-semibold text-gray-700">
-                {message}
-              </p>
-            )}
-
-            <button
-              onClick={calculate}
-              className="w-full rounded-2xl bg-black px-5 py-4 text-lg font-black text-white hover:bg-gray-800"
-            >
-              계산하기
-            </button>
-          </section>
-
-          <section className="space-y-4">
-            {!result ? (
-              <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
-                <p className="text-lg font-bold">아직 계산 결과가 없습니다.</p>
-                <p className="mt-2 text-gray-500">
-                  수입과 지출을 입력한 뒤 계산하기를 눌러주세요.
+  if (!started) {
+    return (
+      <main className="min-h-screen bg-[#f5f5f2] px-4 py-8 text-gray-900">
+        <div className="mx-auto flex min-h-[85vh] max-w-5xl items-center">
+          <section className="w-full rounded-[2rem] bg-white p-6 shadow-sm md:p-12">
+            <div className="grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+              <div>
+                <p className="mb-4 inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                  3분 생활 안전 체크
                 </p>
-              </div>
-            ) : (
-              <>
-                <div
-                  className={`rounded-3xl p-6 shadow-sm ${
-                    result.statusColor === "green"
-                      ? "bg-green-50"
-                      : result.statusColor === "yellow"
-                      ? "bg-yellow-50"
-                      : "bg-red-50"
-                  }`}
-                >
-                  <p className="text-sm font-bold text-gray-600">한 줄 진단</p>
-                  <h2 className="mt-2 text-2xl font-black">
-                    {result.diagnosis}
-                  </h2>
 
-                  {result.warnings.length > 0 && (
-                    <ul className="mt-4 space-y-2 text-sm font-semibold">
-                      {result.warnings.map((warning) => (
-                        <li key={warning}>⚠️ {warning}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
+                  부모님 집,
+                  <br />
+                  정말 안전할까요?
+                </h1>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <ResultCard
-                    title="부부 합산 월수입"
-                    value={formatWon(result.totalIncome)}
-                  />
-                  <ResultCard
-                    title="총 지출"
-                    value={formatWon(result.totalExpense)}
-                  />
-                  <ResultCard
-                    title="총 고정지출"
-                    value={formatWon(result.totalFixedCost)}
-                  />
-                  <ResultCard
-                    title="총 생활비"
-                    value={formatWon(result.totalLivingCost)}
-                  />
-                  <ResultCard
-                    title="총 대출상환"
-                    value={formatWon(result.totalLoanPayment)}
-                  />
-                  <ResultCard
-                    title="월 잔액"
-                    value={formatWon(result.monthlyBalance)}
-                    highlight={result.monthlyBalance >= 0 ? "good" : "bad"}
-                  />
-                </div>
+                <p className="mt-5 text-lg leading-8 text-gray-600">
+                  욕실, 야간 이동, 약 관리, 건강 측정, 주방 안전까지
+                  15문항으로 부모님 집의 생활 위험 신호를 확인해보세요.
+                </p>
 
-                <div className="rounded-3xl bg-white p-6 shadow-sm">
-                  <h3 className="mb-4 text-xl font-black">목표 달성 체크</h3>
-
-                  <div className="space-y-3">
-                    <InfoLine
-                      label="목표 저축 가능 여부"
-                      value={
-                        result.canReachSavingGoal
-                          ? "달성 가능합니다."
-                          : "현재 구조로는 부족합니다."
-                      }
-                      good={result.canReachSavingGoal}
-                    />
-                    <InfoLine
-                      label="부부 저축률"
-                      value={formatPercent(result.savingRate)}
-                      good={result.savingRate >= 20}
-                    />
-                    <InfoLine
-                      label="대출상환 부담률"
-                      value={formatPercent(result.loanBurdenRate)}
-                      good={result.loanBurdenRate < 30}
-                    />
-                    <InfoLine
-                      label="생활비 위험도"
-                      value={formatPercent(result.livingCostRate)}
-                      good={result.livingCostRate < 35}
-                    />
-                    <InfoLine
-                      label="비상금 목표까지"
-                      value={result.emergencyFundMonthsText}
-                      good={!result.emergencyFundMonthsText.includes("어려움")}
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-3xl bg-white p-6 shadow-sm">
-                  <h3 className="text-xl font-black">요약</h3>
-                  <p className="mt-3 leading-7 text-gray-700">
-                    이번 달 예상 잔액은{" "}
-                    <strong>{formatWon(result.monthlyBalance)}</strong>입니다.
-                    월 저축 목표는{" "}
-                    <strong>
-                      {result.canReachSavingGoal
-                        ? "달성 가능합니다."
-                        : "현재 구조로는 부족합니다."}
-                    </strong>
-                    현재 저축률은{" "}
-                    <strong>{formatPercent(result.savingRate)}</strong>입니다.
-                    대출상환 부담률은{" "}
-                    <strong>{formatPercent(result.loanBurdenRate)}</strong>
-                    입니다. 비상금 목표까지는{" "}
-                    <strong>{result.emergencyFundMonthsText}</strong>이
-                    필요합니다.
-                  </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    onClick={() => setStarted(true)}
+                    className="rounded-2xl bg-black px-6 py-4 text-lg font-black text-white hover:bg-gray-800"
+                  >
+                    점검 시작하기
+                  </button>
 
                   <button
+                    onClick={() => {
+                      setStarted(true);
+                      const exampleAnswers: Record<number, Answer> = {};
+                      questions.forEach((question) => {
+                        exampleAnswers[question.id] =
+                          question.dangerAnswer === "yes" ? "yes" : "no";
+                      });
+                      setAnswers(exampleAnswers);
+                    }}
+                    className="rounded-2xl border border-gray-300 px-6 py-4 text-lg font-black hover:bg-gray-50"
+                  >
+                    예시로 보기
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] bg-gradient-to-br from-emerald-100 to-yellow-100 p-6">
+                <div className="rounded-[1.5rem] bg-white/80 p-6 shadow-sm">
+                  <p className="text-sm font-bold text-gray-500">
+                    점검 영역
+                  </p>
+
+                  <div className="mt-5 grid gap-3">
+                    {categories.map((category) => (
+                      <div
+                        key={category}
+                        className="rounded-2xl bg-white px-4 py-3 font-bold shadow-sm"
+                      >
+                        {category}
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="mt-6 text-sm leading-6 text-gray-500">
+                    체크 결과에 따라 위험 TOP 3와 필요한 생활 안전템을
+                    추천합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (showResult) {
+    return (
+      <main className="min-h-screen bg-[#f5f5f2] px-4 py-8 text-gray-900">
+        <div className="mx-auto max-w-6xl">
+          <section className="mb-6 rounded-[2rem] bg-white p-6 shadow-sm md:p-10">
+            <p className="mb-3 inline-flex rounded-full bg-gray-100 px-4 py-2 text-sm font-bold">
+              부모님 집 안전 점검 결과
+            </p>
+
+            <div className="grid gap-6 md:grid-cols-[0.8fr_1.2fr] md:items-center">
+              <div
+                className={`rounded-[2rem] p-8 text-center ${
+                  result.levelColor === "green"
+                    ? "bg-emerald-50"
+                    : result.levelColor === "yellow"
+                    ? "bg-yellow-50"
+                    : "bg-red-50"
+                }`}
+              >
+                <p className="text-sm font-black text-gray-500">안전 점수</p>
+                <p
+                  className={`mt-3 text-7xl font-black ${
+                    result.levelColor === "green"
+                      ? "text-emerald-600"
+                      : result.levelColor === "yellow"
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {result.safetyScore}
+                </p>
+                <p className="mt-3 text-2xl font-black">{result.level}</p>
+                <p className="mt-2 text-sm text-gray-500">
+                  위험 점수 {result.totalRiskScore}점
+                </p>
+              </div>
+
+              <div>
+                <h1 className="text-3xl font-black md:text-5xl">
+                  가장 먼저 점검할 곳은
+                  <br />
+                  <span className="text-emerald-700">
+                    {result.topRisks[0]?.category}
+                  </span>
+                  입니다.
+                </h1>
+
+                <p className="mt-5 text-lg leading-8 text-gray-600">
+                  아래 위험 TOP 3를 기준으로 부모님 집의 생활 안전 환경을
+                  먼저 점검해보세요.
+                </p>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <button
                     onClick={copyResult}
-                    className="mt-5 w-full rounded-2xl border border-gray-300 px-5 py-3 font-black hover:bg-gray-100"
+                    className="rounded-2xl bg-black px-5 py-3 font-black text-white hover:bg-gray-800"
                   >
                     결과 복사하기
                   </button>
+
+                  <button
+                    onClick={resetTest}
+                    className="rounded-2xl border border-gray-300 px-5 py-3 font-black hover:bg-white"
+                  >
+                    다시 점검하기
+                  </button>
                 </div>
 
-                <p className="rounded-3xl bg-white p-5 text-sm leading-6 text-gray-500 shadow-sm">
-                  이 계산기는 가정의 월 현금흐름을 단순 계산하는 참고용
-                  도구입니다. 실제 재무 판단은 개인의 대출 조건, 자산 상황,
-                  가족 구성, 비상 상황에 따라 달라질 수 있습니다.
-                </p>
-              </>
-            )}
+                {copyMessage && (
+                  <p className="mt-3 text-sm font-bold text-emerald-700">
+                    {copyMessage}
+                  </p>
+                )}
+              </div>
+            </div>
           </section>
+
+          <section className="mb-6 grid gap-4 md:grid-cols-3">
+            {result.topRisks.map((risk, index) => (
+              <article
+                key={risk.category}
+                className="rounded-[2rem] bg-white p-6 shadow-sm"
+              >
+                <p className="text-sm font-black text-gray-400">
+                  TOP {index + 1}
+                </p>
+                <h2 className="mt-2 text-2xl font-black">{risk.category}</h2>
+                <p className="mt-4 leading-7 text-gray-600">
+                  {risk.description}
+                </p>
+
+                <div className="mt-5 rounded-2xl bg-gray-50 p-4">
+                  <p className="mb-3 text-sm font-black text-gray-500">
+                    추천 준비물
+                  </p>
+
+                  <ul className="space-y-2">
+                    {risk.items.map((item) => (
+                      <li key={item} className="font-bold">
+                        • {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <a
+                  href={risk.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 block rounded-2xl bg-black px-5 py-3 text-center font-black text-white hover:bg-gray-800"
+                >
+                  추천템 보러가기
+                </a>
+              </article>
+            ))}
+          </section>
+
+          <section className="mb-6 rounded-[2rem] bg-white p-6 shadow-sm md:p-8">
+            <h2 className="text-2xl font-black">영역별 위험 점수</h2>
+
+            <div className="mt-5 grid gap-3">
+              {categories.map((category) => (
+                <div key={category}>
+                  <div className="mb-2 flex items-center justify-between text-sm font-bold">
+                    <span>{category}</span>
+                    <span>{result.categoryScores[category]}점</span>
+                  </div>
+
+                  <div className="h-3 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className="h-full rounded-full bg-emerald-500"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (result.categoryScores[category] / 6) * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-3 text-sm leading-6 text-gray-500">
+            <p className="rounded-3xl bg-white p-5 shadow-sm">
+              이 점검표는 부모님 집의 생활 안전 환경을 확인하기 위한 참고용
+              도구입니다. 의학적 진단이나 치료를 대신하지 않으며, 낙상
+              위험이 높거나 건강 이상 증상이 있다면 전문가와 상담하세요.
+            </p>
+
+            <p className="rounded-3xl bg-white p-5 shadow-sm">
+              이 페이지에는 쿠팡파트너스 링크가 포함될 수 있으며, 이를 통해
+              일정액의 수수료를 제공받을 수 있습니다.
+            </p>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-[#f5f5f2] px-4 py-8 text-gray-900">
+      <div className="mx-auto max-w-5xl">
+        <section className="mb-6 rounded-[2rem] bg-white p-6 shadow-sm md:p-10">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="mb-3 inline-flex rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                {answeredCount}/{questions.length}개 응답 완료
+              </p>
+              <h1 className="text-3xl font-black md:text-5xl">
+                부모님 집 안전 점검표
+              </h1>
+              <p className="mt-3 text-gray-600">
+                각 문항에 예, 아니오, 해당 없음 중 하나를 선택해주세요.
+              </p>
+            </div>
+
+            <button
+              onClick={handleShowResult}
+              className="rounded-2xl bg-black px-6 py-4 font-black text-white hover:bg-gray-800"
+            >
+              결과 보기
+            </button>
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          {categories.map((category) => (
+            <div key={category} className="rounded-[2rem] bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-black">{category}</h2>
+              <p className="mt-2 text-sm leading-6 text-gray-500">
+                {categoryInfo[category].description}
+              </p>
+
+              <div className="mt-5 space-y-4">
+                {questions
+                  .filter((question) => question.category === category)
+                  .map((question) => (
+                    <article
+                      key={question.id}
+                      className="rounded-2xl border border-gray-200 p-4"
+                    >
+                      <p className="font-bold leading-7">
+                        {question.id}. {question.text}
+                      </p>
+
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        <AnswerButton
+                          label="예"
+                          selected={answers[question.id] === "yes"}
+                          onClick={() => handleAnswer(question.id, "yes")}
+                        />
+                        <AnswerButton
+                          label="아니오"
+                          selected={answers[question.id] === "no"}
+                          onClick={() => handleAnswer(question.id, "no")}
+                        />
+                        <AnswerButton
+                          label="해당 없음"
+                          selected={answers[question.id] === "na"}
+                          onClick={() => handleAnswer(question.id, "na")}
+                        />
+                      </div>
+                    </article>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <div className="sticky bottom-4 mt-6 rounded-3xl bg-white/90 p-4 shadow-lg backdrop-blur">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-bold">
+              {answeredCount}/{questions.length}개 응답 완료
+            </p>
+            <button
+              onClick={handleShowResult}
+              className="rounded-2xl bg-black px-6 py-4 font-black text-white hover:bg-gray-800"
+            >
+              결과 보기
+            </button>
+          </div>
         </div>
       </div>
     </main>
   );
 }
 
-function ResultCard({
-  title,
-  value,
-  highlight,
-}: {
-  title: string;
-  value: string;
-  highlight?: "good" | "bad";
-}) {
-  return (
-    <div className="rounded-3xl bg-white p-5 shadow-sm">
-      <p className="text-sm font-bold text-gray-500">{title}</p>
-      <p
-        className={`mt-2 text-2xl font-black ${
-          highlight === "good"
-            ? "text-green-600"
-            : highlight === "bad"
-            ? "text-red-600"
-            : "text-gray-900"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function InfoLine({
+function AnswerButton({
   label,
-  value,
-  good,
+  selected,
+  onClick,
 }: {
   label: string;
-  value: string;
-  good: boolean;
+  selected: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl bg-gray-50 px-4 py-3">
-      <span className="text-sm font-bold text-gray-600">{label}</span>
-      <span
-        className={`text-right font-black ${
-          good ? "text-green-600" : "text-red-600"
-        }`}
-      >
-        {value}
-      </span>
-    </div>
+    <button
+      onClick={onClick}
+      className={`rounded-xl border px-3 py-3 text-sm font-black transition ${
+        selected
+          ? "border-black bg-black text-white"
+          : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
