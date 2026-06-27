@@ -80,7 +80,7 @@ const babyProducts: Product[] = [
     reason: "아기가 놀라 깨는 일이 잦은 시기에 수면 환경을 안정적으로 잡아주는 대표 아이템이에요.",
     buttonText: "속싸개 인기상품 보기",
     reviewMemo: "리뷰 많은 순, 별점 4.5 이상 상품으로 링크 연결 추천",
-    partnerLink: "",
+    partnerLink: "https://link.coupang.com/a/eVNRnmf6KO",
   },
   {
     id: "waterproof_pad",
@@ -92,7 +92,7 @@ const babyProducts: Product[] = [
     reason: "기저귀 샘, 토, 침으로부터 침구를 보호해주는 기본 육아템이에요.",
     buttonText: "방수패드 보기",
     reviewMemo: "세탁 편한 제품, 리뷰 많은 제품 우선",
-    partnerLink: "",
+    partnerLink: "https://link.coupang.com/a/eVNTgHVLKC",
   },
   {
     id: "bottle_sterilizer",
@@ -104,7 +104,7 @@ const babyProducts: Product[] = [
     reason: "젖병, 쪽쪽이, 작은 수유용품을 위생적으로 관리할 때 편해요.",
     buttonText: "젖병소독기 비교하기",
     reviewMemo: "리뷰 수 많고 건조 기능 있는 제품 추천",
-    partnerLink: "",
+    partnerLink: "https://link.coupang.com/a/eVNU3oGkyi",
   },
   {
     id: "formula_pot",
@@ -116,7 +116,7 @@ const babyProducts: Product[] = [
     reason: "새벽 수유 때 분유 온도를 맞추는 시간을 줄여주는 편의템이에요.",
     buttonText: "분유포트 보기",
     reviewMemo: "온도 유지 기능, 세척 편의성 확인",
-    partnerLink: "",
+    partnerLink: "https://link.coupang.com/a/eVNWDtkJWu",
   },
   {
     id: "thermometer",
@@ -128,7 +128,7 @@ const babyProducts: Product[] = [
     reason: "아이 발열이 걱정될 때 집에서 빠르게 확인할 수 있는 기본 건강관리템이에요.",
     buttonText: "체온계 인기상품 보기",
     reviewMemo: "리뷰 수 많고 측정 안정성 후기 좋은 제품 추천",
-    partnerLink: "",
+    partnerLink: "https://link.coupang.com/a/eVNXVjNddc",
   },
   {
     id: "nasal_aspirator",
@@ -140,7 +140,7 @@ const babyProducts: Product[] = [
     reason: "감기나 코막힘으로 힘들어할 때 부모들이 많이 찾는 육아템이에요.",
     buttonText: "콧물흡입기 보기",
     reviewMemo: "세척 편의성, 흡입력 후기 확인",
-    partnerLink: "",
+    partnerLink: "https://link.coupang.com/a/eVNZPyvxFQ",
   },
   {
     id: "baby_carrier",
@@ -152,7 +152,7 @@ const babyProducts: Product[] = [
     reason: "병원 방문이나 짧은 외출 때 손이 자유로워져서 부모 부담을 줄여줘요.",
     buttonText: "아기띠 인기상품 보기",
     reviewMemo: "신생아 사용 가능 여부와 허리 지지 후기 확인",
-    partnerLink: "",
+    partnerLink: "https://link.coupang.com/a/eVN2lX7yhw",
   },
   {
     id: "diaper_bag",
@@ -164,7 +164,7 @@ const babyProducts: Product[] = [
     reason: "기저귀, 물티슈, 여벌옷, 젖병을 한 번에 챙기기 좋아요.",
     buttonText: "기저귀 가방 보기",
     reviewMemo: "수납칸 많고 가벼운 제품 추천",
-    partnerLink: "",
+    partnerLink: "https://link.coupang.com/a/eVN3xKW3TE",
   },
   {
     id: "baby_spoon",
@@ -540,8 +540,8 @@ export default function Page() {
             </div>
 
             <div className="mt-6 rounded-2xl bg-[#fff4e5] p-4 text-sm leading-relaxed text-[#6b4d25]">
-              이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른
-              일정액의 수수료를 제공받습니다.
+            이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+
               <br />
               제품 선택 전 사용 가능 월령, KC 인증, 보호자 사용 지침,
               실제 후기와 배송 정보를 꼭 확인해주세요.
